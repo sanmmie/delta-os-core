@@ -1,0 +1,22 @@
+name: Publish to pub.dev
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.0.0'
+      - run: dart pub get
+      - run: dart pub publish --dry-run
+      - uses: dart-lang/pub-dev-publish-action@v1
+        with:
+          accessToken: ${{ secrets.PUB_DEV_ACCESS_TOKEN }}

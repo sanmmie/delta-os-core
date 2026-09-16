@@ -98,7 +98,8 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    start = websockets.serve(handle_connection, args.host, args.port)
-    LOG.info("Starting kernel mock on %s:%d", args.host, args.port)
-    asyncio.get_event_loop().run_until_complete(start)
-    asyncio.get_event_loop().run_forever()
+    async def main():
+        server = await websockets.serve(handle_connection, args.host, args.port)
+        LOG.info("Starting kernel mock on %s:%d", args.host, args.port)
+        await server.wait_closed()
+    asyncio.run(main())

@@ -6,3 +6,5 @@ library delta_os_core;
 
 // Core Coordination
 export 'core/orchestrator.dart';
+export 'core/validation/manifest_validator.dart';
+export 'core/errors/delta_errors.dart';

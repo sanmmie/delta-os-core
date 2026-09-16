@@ -2,10 +2,10 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "flutter pub get"
+    "buildCommand": "pip install -r requirements.txt"
   },
   "deploy": {
-    "startCommand": "dart bin/delta_os_core.dart --demo",
+    "startCommand": "uvicorn api.main:app --host 0.0.0.0 --port $PORT --workers 2",
     "restartPolicyType": "ON_FAILURE",
     "numReplicas": 1
   }

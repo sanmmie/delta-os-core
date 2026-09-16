@@ -247,7 +247,7 @@ class AsyncDeltaNode:
         def run_sync():
             return self.system.run_cycle(input_data, raw_env, self.node_id)
             
-        record, feedback = await asyncio.get_event_loop().run_in_executor(None, run_sync)
+        record, feedback = await asyncio.get_running_loop().run_in_executor(None, run_sync)
         
         await self.transport.publish(self.node_id, {
             "context": record["context"],

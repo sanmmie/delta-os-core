@@ -9,7 +9,7 @@ abstract class DeltaError implements Exception {
   final DateTime timestamp;
   final Map<String, dynamic> context;
 
-  const DeltaError({
+  DeltaError({
     required this.message,
     required this.severity,
     required this.domain,

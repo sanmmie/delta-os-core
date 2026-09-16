@@ -23,21 +23,21 @@ jobs:
         uses: dart-lang/setup-dart@v1
 
       - name: CodeQL Initialization
-        uses: github/codeql-action/init@v2
+        uses: github/codeql-action/init@v3
         with:
           languages: dart
 
       - name: CodeQL Analysis
         id: codeql
-        uses: github/codeql-action/analyze@v2
+        uses: github/codeql-action/analyze@v3
 
       - name: Dependency Vulnerability Scan
         id: audit
-        run: dart pub audit --json > audit-report.json || echo "Audit completed with warnings"
+        run: dart pub outdated --json > audit-report.json
 
       - name: Security Linter
         id: lint
-        run: dart analyze --fatal-infos > lint-report.txt || echo "Lint completed with warnings"
+        run: dart pub get && dart analyze --fatal-infos > lint-report.txt
 
       - name: Upload Security Reports
         uses: actions/upload-artifact@v4

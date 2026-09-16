@@ -4,10 +4,10 @@ import json
 import websockets
 from uuid import uuid4
 
-KERNE_URI = "ws://localhost:8765"
+KERNEL_URI = "ws://localhost:8765"
 
 async def run():
-    async with websockets.connect(KERNE_URI) as ws:
+    async with websockets.connect(KERNEL_URI) as ws:
         # Example: ask the heritage node for artifact by id
         request_id = str(uuid4())
         msg = {

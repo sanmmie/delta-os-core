@@ -203,7 +203,7 @@ class DomainAction {
   final ActionPriority priority;
   final DateTime timestamp;
 
-  const DomainAction({
+  DomainAction({
     required this.domain,
     required this.type,
     this.parameters = const {},
@@ -228,7 +228,7 @@ class CoordinationContext {
   final EthicalConstraints ethicalConstraints;
   final DateTime timestamp;
 
-  const CoordinationContext({
+  CoordinationContext({
     this.environment = const {},
     this.ethicalConstraints = const EthicalConstraints(),
     DateTime? timestamp,
@@ -243,7 +243,7 @@ class CoordinationResult {
   final CoordinationContext coordinationContext;
   final DateTime completedAt;
 
-  const CoordinationResult({
+  CoordinationResult({
     required this.actions,
     required this.harmonyScore,
     required this.ethicalAudit,

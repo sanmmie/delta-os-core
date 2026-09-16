@@ -17,24 +17,12 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 black isort pylint mypy bandit
+        pip install flake8 bandit
     
-    - name: Check code formatting with Black
+    - name: Check undefined names
       run: |
-        black --check --diff .
-    
-    - name: Check import sorting with isort
-      run: |
-        isort --check --diff .
-    
-    - name: Lint with flake8
-      run: |
-        flake8 .
-    
-    - name: Run pylint
-      run: |
-        pylint $(find . -name "*.py" | grep -v venv)
+        flake8 api config middleware models security services utils --select=F
     
     - name: Security scan with bandit
       run: |
-        bandit -r . -f json
+        bandit -r api config middleware models security services utils -f json

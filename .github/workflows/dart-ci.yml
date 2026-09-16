@@ -15,22 +15,22 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
     
-    - name: Setup Flutter
-      uses: subosito/flutter-action@v2
+    - name: Setup Dart
+      uses: dart-lang/setup-dart@v1
       with:
-        flutter-version: '3.13.0'
+        sdk: '3.0.0'
         
     - name: Install dependencies
-      run: flutter pub get
+      run: dart pub get
       
     - name: Run tests
-      run: flutter test
+      run: dart test
       
     - name: Run analyzer
-      run: flutter analyze
+      run: dart analyze --fatal-infos
       
     - name: Check formatting
-      run: flutter format --set-exit-if-changed .
+      run: dart format --set-exit-if-changed .
 
   build:
     name: "Build Verification"
@@ -41,15 +41,15 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
       
-    - name: Setup Flutter
-      uses: subosito/flutter-action@v2
+    - name: Setup Dart
+      uses: dart-lang/setup-dart@v1
       with:
-        flutter-version: '3.13.0'
+        sdk: '3.0.0'
       
     - name: Install dependencies
-      run: flutter pub get
+      run: dart pub get
       
     - name: Verify build
       run: |
         echo "Building DeltaOS Core..."
-        flutter analyze
+        dart analyze --fatal-infos

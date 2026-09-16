@@ -1,4 +1,4 @@
-include: package:flutter_lints/flutter.yaml
+include: package:lints/recommended.yaml
 
 analyzer:
   exclude:
@@ -16,4 +16,3 @@ linter:
     - always_declare_return_types
     - avoid_empty_else
     - prefer_final_locals
-    - use_key_in_widget_constructors

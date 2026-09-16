@@ -9,6 +9,7 @@ services:
       - ENVIRONMENT=production
       - POSTGRES_HOST=postgres
       - REDIS_HOST=redis
+      - CORS_ORIGINS=${CORS_ORIGINS:-}
     depends_on:
       postgres:
         condition: service_healthy

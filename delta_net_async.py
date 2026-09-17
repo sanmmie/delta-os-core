@@ -815,6 +815,14 @@ class DeltaOS:
         }
 
     def run_cycle(self, input_data, raw_env, node_id=None):
+        # Reset state machine if not idle (e.g., after transform())
+        if self.state_machine.state != "idle":
+            logger.warning(
+                "run_cycle: resetting state from %s to idle",
+                self.state_machine.state,
+            )
+            self.state_machine.reset()
+
         # Ethics gate: consent check BEFORE entering observe state
         consent_result = self.ethics.check_consent(raw_env, self.intent)
         if not consent_result["consent"]:
@@ -858,7 +866,13 @@ class DeltaOS:
                 plan.rationale, plan_dict
             )
             if not reciprocity["reciprocal"]:
-                logger.warning("Node %s: reciprocity check failed", node_id)
+                other_nodes = [n for n in network_nodes if n != node_id]
+                if other_nodes:
+                    logger.warning(
+                        "Node %s: reciprocity check failed (peers: %s)",
+                        node_id,
+                        len(other_nodes),
+                    )
             if not transparency["transparent"]:
                 logger.warning("Node %s: transparency check failed", node_id)
 

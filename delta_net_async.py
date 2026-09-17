@@ -370,6 +370,96 @@ class EmotionModule:
 
 
 # ============================================================================
+# ETHICS ENGINE — Consent, reciprocity, transparency
+# ============================================================================
+
+class EthicsEngine:
+    """Ethics Engine — Enforces consent, reciprocity, and transparency principles.
+
+    Principles:
+      - Consent: User must explicitly grant consent before transformation.
+      - Reciprocity: Benefits must extend beyond the origin node.
+      - Transparency: All decisions must have auditable rationale.
+    """
+
+    def __init__(self):
+        self.consent_log = []
+        self.reciprocity_log = []
+        self.transparency_log = []
+
+    def check_consent(self, context: dict, intent: dict) -> dict:
+        """Verify user consent is present and valid."""
+        consent_raw = context.get("consent", context.get("user_consent", True))
+        consent_granted = bool(consent_raw) if not isinstance(consent_raw, bool) else consent_raw
+        record = {
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "consent_granted": consent_granted,
+            "context_keys": list(context.keys()) if isinstance(context, dict) else [],
+            "intent_domains": intent.get("domains", []) if isinstance(intent, dict) else [],
+        }
+        self.consent_log.append(record)
+        return {
+            "consent": consent_granted,
+            "record": record,
+        }
+
+    def check_reciprocity(self, node_id: str, plan: dict, network_nodes: list) -> dict:
+        """Verify benefit extends beyond the origin node."""
+        if not node_id or not plan or not network_nodes:
+            return {"reciprocal": False, "reason": "insufficient_data"}
+        plan_actions = plan.get("actions", []) if isinstance(plan, dict) else []
+        beneficial = any(
+            a.get("type") in ("increase_allocation", "hold", "continue_trajectory")
+            for a in plan_actions
+        )
+        extends_beyond = len(network_nodes) > 1
+        reciprocal = beneficial and extends_beyond
+        record = {
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "node_id": node_id,
+            "reciprocal": reciprocal,
+            "network_size": len(network_nodes),
+            "reason": "benefit extends to network" if reciprocal else "benefit too narrow or no network",
+        }
+        self.reciprocity_log.append(record)
+        return {
+            "reciprocal": reciprocal,
+            "record": record,
+        }
+
+    def check_transparency(self, rationale: str, plan: dict) -> dict:
+        """Verify decision has auditable rationale."""
+        transparent = bool(rationale and isinstance(rationale, str) and len(rationale.strip()) > 0)
+        record = {
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "transparent": transparent,
+            "rationale": rationale or "",
+            "has_actions": bool(plan and isinstance(plan, dict) and plan.get("actions")),
+        }
+        self.transparency_log.append(record)
+        return {
+            "transparent": transparent,
+            "record": record,
+        }
+
+    def evaluate(self, context: dict, intent: dict, node_id: str, plan: dict, network_nodes: list) -> dict:
+        """Run all three ethics checks and return combined result."""
+        consent = self.check_consent(context, intent)
+        reciprocity = self.check_reciprocity(node_id, plan, network_nodes)
+        transparency = self.check_transparency(
+            plan.get("rationale", "") if isinstance(plan, dict) else "",
+            plan if isinstance(plan, dict) else {},
+        )
+        passed = consent["consent"] and reciprocity["reciprocal"] and transparency["transparent"]
+        return {
+            "passed": passed,
+            "consent": consent,
+            "reciprocity": reciprocity,
+            "transparency": transparency,
+        }
+
+
+# ============================================================================
 # © COMPILER — Context compilation and signature synthesis
 # ============================================================================
 
@@ -407,9 +497,64 @@ class Modules:
     def __init__(self):
         self.history = []
 
-    def observe(self, data):
-        self.history.append(dict(data))
-        return {"pattern_map": data}
+    def observe(self, data, channel="sensor"):
+        record = {
+            "channel": channel,
+            "data": dict(data) if isinstance(data, dict) else {"value": data},
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+        }
+        self.history.append(record)
+        channel_handlers = {
+            "sensor": self._observe_sensor,
+            "text": self._observe_text,
+            "audio": self._observe_audio,
+            "API_stream": self._observe_api_stream,
+        }
+        handler = channel_handlers.get(channel, self._observe_generic)
+        return handler(record)
+
+    def _observe_generic(self, record):
+        return {"pattern_map": record["data"], "channel": record["channel"]}
+
+    def _observe_sensor(self, record):
+        data = record["data"]
+        return {
+            "pattern_map": data,
+            "channel": "sensor",
+            "readings": [v for k, v in data.items() if isinstance(v, (int, float))],
+            "channels": list(data.keys()),
+        }
+
+    def _observe_text(self, record):
+        data = record["data"]
+        text = data.get("text", data.get("content", ""))
+        return {
+            "pattern_map": data,
+            "channel": "text",
+            "tokens": text.split() if isinstance(text, str) else [],
+            "length": len(text) if isinstance(text, str) else 0,
+            "channels": list(data.keys()),
+        }
+
+    def _observe_audio(self, record):
+        data = record["data"]
+        waveform = data.get("waveform", data.get("audio_data", []))
+        return {
+            "pattern_map": data,
+            "channel": "audio",
+            "samples": len(waveform) if isinstance(waveform, (list, tuple)) else 0,
+            "channels": list(data.keys()),
+        }
+
+    def _observe_api_stream(self, record):
+        data = record["data"]
+        return {
+            "pattern_map": data,
+            "channel": "API_stream",
+            "endpoint": data.get("endpoint", data.get("url", "")),
+            "status": data.get("status_code", data.get("status", 0)),
+            "channels": list(data.keys()),
+        }
 
     def reflect(self, record):
         """Reflect on cycle record and produce memory trace (no longer a stub)."""
@@ -466,6 +611,19 @@ class Transmission:
     def __init__(self):
         self.nodes = {}
         self.quarantined = set()
+        self.feedback_log = []
+
+    def log_evolutionary_feedback(self, node_id, cycle_record, feedback):
+        entry = {
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "node_id": node_id,
+            "cycle": cycle_record.get("cycle", 0) if isinstance(cycle_record, dict) else 0,
+            "intent_score": cycle_record.get("intent_score", 0.5) if isinstance(cycle_record, dict) else 0.5,
+            "plan_confidence": cycle_record.get("plan", {}).get("confidence", 0.0) if isinstance(cycle_record, dict) and isinstance(cycle_record.get("plan"), dict) else 0.0,
+            "feedback": feedback,
+        }
+        self.feedback_log.append(entry)
+        return entry
 
     def register_node(self, node_id, signature):
         self.nodes[node_id] = signature.summary()
@@ -605,13 +763,15 @@ class SymbolicInterface:
 
 
 class DeltaOS:
-    def __init__(self, intent):
+    def __init__(self, context, intent):
         self.kernel_delta = DeltaEngine()
         self.compiler = ContextCompiler()
         self.integrator = IntentIntegrator()  # WAS: None — now fully implemented
         self.modules = Modules()
         self.transmission = Transmission()
+        self.context = context
         self.intent = intent
+        self.ethics = EthicsEngine()
         self.cycle_log = []
         self.state_machine = StateMachine()
         self.quarantined_nodes = set()
@@ -629,7 +789,11 @@ class DeltaOS:
 
     def transform(self, input_data, raw_env):
         """Execute a transformation (Δ → plan) without full cycle recording."""
+        if self.state_machine.can_handle("on_input_signal"):
+            self.state_machine.transition("on_input_signal")
         self.modules.observe(input_data)
+        if self.state_machine.can_handle("on_delta_detected"):
+            self.state_machine.transition("on_delta_detected")
         context = self.compiler.compile(raw_env)
         history_slice = self.modules.history[:-1]
         delta_info = self.kernel_delta.compute_delta(input_data, history_slice)
@@ -640,22 +804,23 @@ class DeltaOS:
             "confidence": plan.confidence,
             "delta_info": delta_info,
             "context": context,
+            "state": self.state_machine.state,
         }
 
     def run_cycle(self, input_data, raw_env, node_id=None):
+        # Ethics gate: consent check BEFORE entering observe state
+        consent_result = self.ethics.check_consent(raw_env, self.intent)
+        if not consent_result["consent"]:
+            raise PermissionError(
+                "Consent required for transformation (ethics layer)"
+            )
+
         # State machine: idle → observe (on_input_signal)
         if self.state_machine.can_handle("on_input_signal"):
             self.state_machine.transition("on_input_signal")
 
         self.modules.observe(input_data)
         context = self.compiler.compile(raw_env)
-
-        # Check consent before proceeding (ethics layer)
-        consent = raw_env.get("consent", raw_env.get("user_consent", True))
-        if not consent:
-            raise PermissionError(
-                "User consent required for transformation (ethics layer)"
-            )
 
         history_slice = self.modules.history[:-1]
         delta_info = self.kernel_delta.compute_delta(input_data, history_slice)
@@ -676,16 +841,19 @@ class DeltaOS:
             self.intent, plan_dict, input_data
         )
 
-        # Reciprocity check: ensure benefit extends beyond origin node
+        # Ethics checks after plan is generated (reciprocity + transparency)
         if node_id:
-            intent_alignment = self.transmission.verify_intent_alignment(
-                self.intent, plan_dict, {"intent_score": intent_compliance}
+            network_nodes = list(self.transmission.nodes.keys()) + [node_id]
+            reciprocity = self.ethics.check_reciprocity(
+                node_id, plan_dict, network_nodes
             )
-            if not intent_alignment["aligned"]:
-                logger.warning(
-                    "Node %s: intent alignment below threshold (%s)",
-                    node_id, intent_alignment["score"],
-                )
+            transparency = self.ethics.check_transparency(
+                plan.rationale, plan_dict
+            )
+            if not reciprocity["reciprocal"]:
+                logger.warning("Node %s: reciprocity check failed", node_id)
+            if not transparency["transparent"]:
+                logger.warning("Node %s: transparency check failed", node_id)
 
         cycle_record = {
             "timestamp": datetime.datetime.utcnow().isoformat(),
@@ -706,6 +874,11 @@ class DeltaOS:
             self.state_machine.transition("on_action_complete")
 
         feedback = self.modules.reflect(cycle_record)
+
+        # Log evolutionary feedback
+        self.transmission.log_evolutionary_feedback(
+            node_id or "unknown", cycle_record, feedback
+        )
 
         # State machine: reflect → evolve (on_feedback_processed)
         if self.state_machine.can_handle("on_feedback_processed"):
@@ -814,7 +987,7 @@ class AsyncDeltaNode:
         self.node_id = node_id
         self.intent = intent
         self.transport = transport
-        self.system = DeltaOS(intent)
+        self.system = DeltaOS(intent, intent)
         self.queue = None
         self.running = False
 

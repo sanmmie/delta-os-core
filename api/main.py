@@ -31,8 +31,25 @@ REQUEST_COUNT = Counter(
 
 
 @app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Content-Security-Policy"] = "default-src 'self'; frame-ancestors 'none'"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
+
+@app.middleware("http")
 async def request_context(request: Request, call_next):
-    request_id = request.headers.get("X-Request-ID", str(uuid4()))
+    raw_id = request.headers.get("X-Request-ID")
+    if raw_id:
+        import re
+        if not re.match(r"^[a-zA-Z0-9\-_]+$", raw_id) or len(raw_id) > 64:
+            raw_id = None
+    request_id = raw_id or str(uuid4())
     request.state.request_id = request_id
     try:
         response = await call_next(request)

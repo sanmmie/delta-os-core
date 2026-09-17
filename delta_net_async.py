@@ -11,6 +11,7 @@ import hashlib
 import json
 import logging
 import random
+import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
@@ -789,6 +790,12 @@ class DeltaOS:
 
     def transform(self, input_data, raw_env):
         """Execute a transformation (Δ → plan) without full cycle recording."""
+        if not isinstance(input_data, dict):
+            raise ValueError("input_data must be a dict")
+        if not isinstance(raw_env, dict):
+            raise ValueError("raw_env must be a dict")
+        if not input_data:
+            raise ValueError("input_data cannot be empty")
         if self.state_machine.can_handle("on_input_signal"):
             self.state_machine.transition("on_input_signal")
         self.modules.observe(input_data)

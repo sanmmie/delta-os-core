@@ -1,13 +1,17 @@
 version: "3.8"
+
 services:
   kernel-mock:
     image: python:3.11-slim
-    command: ["python", "kernel-mock.py", "--host", "0.0.0.0", "--port", "8765"]
+    command: ["python", "kernel-mock.py", "--host", "127.0.0.1", "--port", "8765"]
+    ports:
+      - "127.0.0.1:8765:8765"
     volumes:
       - ./:/app
     working_dir: /app
-      ports:
-        - "127.0.0.1:8765:8765"
+    networks:
+      - dev
+
   sample-node:
     image: python:3.11-slim
     command: ["python", "node-template/simple_node.py"]
@@ -16,3 +20,9 @@ services:
     working_dir: /app
     depends_on:
       - kernel-mock
+    networks:
+      - dev
+
+networks:
+  dev:
+    driver: bridge

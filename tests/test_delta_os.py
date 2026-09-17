@@ -492,6 +492,24 @@ class TestDeltaOS(unittest.TestCase):
         self.assertEqual(result["status"], "evolved")
         self.assertIn("evolution", result)
 
+    def test_evolve_transitions_to_idle(self):
+        raw_env = {"risk_tolerance": 0.3, "consent": True}
+        # Manually set state to evolve to simulate post-cycle state
+        self.os.state_machine.current_state = "evolve"
+        self.os.run_cycle({"market_index": 100.0}, raw_env, node_id="node1")
+        # After run_cycle, state should be idle (evolve → idle transition)
+        self.assertEqual(self.os.state, "idle")
+
+    def test_evolve_logs_feedback(self):
+        raw_env = {"risk_tolerance": 0.3, "consent": True}
+        self.os.run_cycle({"market_index": 100.0}, raw_env, node_id="node1")
+        result = self.os.evolve()
+        self.assertEqual(result["status"], "evolved")
+        self.assertGreater(len(self.os.transmission.feedback_log), 0)
+        self.assertEqual(
+            self.os.transmission.feedback_log[-1]["node_id"], "delta-core"
+        )
+
     def test_cycle_log(self):
         raw_env = {"risk_tolerance": 0.3, "consent": True}
         self.os.run_cycle({"market_index": 100.0}, raw_env, node_id="node1")

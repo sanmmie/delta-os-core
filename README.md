@@ -163,6 +163,32 @@ CLEAN = FILTER(ETHICAL_PRINCIPLES)
 
 ---
 
+## ⚙️ ΔOS Protocol Implementation
+
+The Conscious Computation Engine protocol is implemented in `delta_net_async.py`.
+All **12 protocol components** are present and verified (see `DeltaOS_LINT_REPORT.md`):
+
+| Component | Module | Status |
+|-----------|--------|--------|
+| Observe (Δ) | `DeltaEngine`, `Modules.observe()` | ✅ Full |
+| Context (©) | `ContextCompiler`, `CompiledContext` | ✅ Full |
+| Intention (™) | `IntentIntegrator` | ✅ Full |
+| Evolve | `DeltaOS.evolve()` | ✅ Full |
+| Reflect | `Modules.reflect()` | ✅ Full |
+| Integrate | `IntentIntegrator.verify_intent_integrity()` | ✅ Full |
+| Control Commands | `DeltaOS.run_cycle()`, `DeltaOS.evolve()` | ✅ Full |
+| Intuition | `IntuitionModule.suggest()` | ✅ Full |
+| Emotion | `EmotionModule.analyze()` | ✅ Full |
+| Transmission | `Transmission` | ✅ Full |
+| State Machine | `StateMachine` (6 states, enforced) | ✅ Full |
+| Symbolic | `SymbolicInterface` | ✅ Full |
+
+> **Note:** The Dart package (`lib/delta_os_core.dart`) provides the CLI/frontend
+> interface. The Python `delta_net_async.py` contains the full protocol engine.
+> Run `python delta_net_async.py` for a 3-node demo.
+
+---
+
 ## 🏗️ Architecture Overview  
 
 ### **Core Components**

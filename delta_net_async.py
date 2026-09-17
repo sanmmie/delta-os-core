@@ -900,7 +900,10 @@ class DeltaOS:
         return cycle_record, feedback
 
     def evolve(self):
-        """Evolve system based on accumulated feedback (ΔOS.evolve)."""
+        """Evolve system based on accumulated feedback (ΔOS.evolve).
+
+        Triggers the evolve → idle transition and logs evolutionary feedback.
+        """
         if not self.cycle_log:
             return {"status": "no_cycles", "evolution": "baseline"}
 
@@ -926,6 +929,19 @@ class DeltaOS:
             evolution = "maintained"
         else:
             evolution = "needs_review"
+
+        # Trigger evolve → idle transition
+        if self.state_machine.state == "evolve":
+            if self.state_machine.can_handle("on_cycle_completion"):
+                self.state_machine.transition("on_cycle_completion")
+
+        # Log evolutionary feedback from last cycle
+        last_cycle = self.cycle_log[-1]
+        self.transmission.log_evolutionary_feedback(
+            "delta-core",
+            last_cycle["record"],
+            last_cycle["feedback"],
+        )
 
         return {
             "status": "evolved",

@@ -21,6 +21,11 @@ RUN mkdir -p backups logs
 # Expose port
 EXPOSE 8000
 
+# Create non-root user for security
+RUN useradd -m -s /bin/bash delta
+RUN mkdir -p /app/backups /app/logs && chown -R delta:delta /app
+USER delta
+
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1

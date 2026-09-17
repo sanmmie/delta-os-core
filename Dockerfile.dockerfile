@@ -28,5 +28,10 @@ COPY . /app
 # Build the executable
 RUN dart compile exe bin/delta_os_core.dart
 
+# Create non-root user for security
+RUN useradd -m -s /bin/bash delta
+RUN chown -R delta:delta /app
+USER delta
+
 # Start command
 CMD ["dart", "bin/delta_os_core.dart", "--demo"]

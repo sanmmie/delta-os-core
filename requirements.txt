@@ -8,10 +8,10 @@ sqlalchemy>=2.0.25
 asyncpg>=0.30.0
 alembic>=1.13.0
 psycopg2-binary>=2.9.10
-python-jose[cryptography]>=3.3.0
+python-jose[cryptography]>=3.4.0
 passlib[bcrypt]>=1.7.4
 bcrypt>=4.2.0
-python-multipart>=0.0.30
+python-multipart==0.0.32
 redis>=5.0.2
 celery>=5.4.0
 prometheus-client>=0.20.0
